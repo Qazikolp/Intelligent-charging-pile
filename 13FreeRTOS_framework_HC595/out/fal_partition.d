@@ -1,0 +1,9 @@
+.\out\fal_partition.o: framework\lib_fal\fal\src\fal_partition.c
+.\out\fal_partition.o: framework\lib_fal\fal\src\../inc/fal.h
+.\out\fal_partition.o: framework\lib_fal\fal\src\../inc/../../fal_port/fal_cfg.h
+.\out\fal_partition.o: framework\lib_fal\fal\src\../inc/fal_def.h
+.\out\fal_partition.o: E:\Keil5\ARM\ARMCC\Bin\..\include\stdint.h
+.\out\fal_partition.o: E:\Keil5\ARM\ARMCC\Bin\..\include\stdio.h
+.\out\fal_partition.o: E:\Keil5\ARM\ARMCC\Bin\..\include\inttypes.h
+.\out\fal_partition.o: E:\Keil5\ARM\ARMCC\Bin\..\include\string.h
+.\out\fal_partition.o: E:\Keil5\ARM\ARMCC\Bin\..\include\stdlib.h

@@ -1,0 +1,179 @@
+
+
+//节点的数据类型
+struct xLIST_ITEM
+{
+	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*用于检查链表是否损坏，我们没有开启检查功能，所以不存在这一行*/
+	configLIST_VOLATILE TickType_t xItemValue;			/*用于节点做排序 */
+	struct xLIST_ITEM * configLIST_VOLATILE pxNext;		/*指向下一个节点*/
+	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;	/*指向上一个节点 */
+	void * pvOwner;										/*这一个节点的主人 TCB*/
+	void * configLIST_VOLATILE pvContainer;				/*指向节点所在的链表 */
+	listSECOND_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*用于检查链表是否损坏，我们没有开启检查功能，所以不存在这一行*/
+};
+
+//类型重定义
+typedef struct xLIST_ITEM ListItem_t;					/* For some reason lint wants this as two separate definitions. */
+
+
+//迷你版的节点数据类型
+struct xMINI_LIST_ITEM
+{
+	listFIRST_LIST_ITEM_INTEGRITY_CHECK_VALUE			/*< Set to a known value if configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES is set to 1. */
+	configLIST_VOLATILE TickType_t xItemValue;			/*用于节点做排序 */
+	struct xLIST_ITEM * configLIST_VOLATILE pxNext;
+	struct xLIST_ITEM * configLIST_VOLATILE pxPrevious;
+};
+//类型重定义
+typedef struct xMINI_LIST_ITEM MiniListItem_t;
+
+
+//链表的数据结构
+typedef struct xLIST
+{
+	listFIRST_LIST_INTEGRITY_CHECK_VALUE				/*用于检查链表是否损坏，我们没有开启检查功能，所以不存在这一行*/
+	configLIST_VOLATILE UBaseType_t uxNumberOfItems;	//节点数
+	ListItem_t * configLIST_VOLATILE pxIndex;			/* ?不明确是什么含义 */
+	MiniListItem_t xListEnd;							/* 猜测: 根节点，->pxNext 就是我们插入的第一个节点*/
+	listSECOND_LIST_INTEGRITY_CHECK_VALUE				/*用于检查链表是否损坏，我们没有开启检查功能，所以不存在这一行*/
+} List_t;
+
+
+/*
+ * Access macro to set the owner of a list item.  The owner of a list item
+ * is the object (usually a TCB) that contains the list item.
+ *
+ * \page listSET_LIST_ITEM_OWNER listSET_LIST_ITEM_OWNER
+ * \ingroup LinkedList
+ 设置节点的主人 拥有者
+ */
+#define listSET_LIST_ITEM_OWNER( pxListItem, pxOwner )		( ( pxListItem )->pvOwner = ( void * ) ( pxOwner ) )
+
+/*
+ * Access macro to get the owner of a list item.  The owner of a list item
+ * is the object (usually a TCB) that contains the list item.
+ *
+ * \page listSET_LIST_ITEM_OWNER listSET_LIST_ITEM_OWNER
+ * \ingroup LinkedList
+ 获取节点的主人 拥有者
+ */
+#define listGET_LIST_ITEM_OWNER( pxListItem )	( ( pxListItem )->pvOwner )
+
+
+/*
+ * Access macro to set the value of the list item.  In most cases the value is
+ * used to sort the list in descending order.
+ *
+ * \page listSET_LIST_ITEM_VALUE listSET_LIST_ITEM_VALUE
+ * \ingroup LinkedList
+ 设置节点的值
+ */
+#define listSET_LIST_ITEM_VALUE( pxListItem, xValue )	( ( pxListItem )->xItemValue = ( xValue ) )
+
+/*
+ * Access macro to retrieve the value of the list item.  The value can
+ * represent anything - for example the priority of a task, or the time at
+ * which a task should be unblocked.
+ *
+ * \page listGET_LIST_ITEM_VALUE listGET_LIST_ITEM_VALUE
+ * \ingroup LinkedList
+ 获取节点的值
+ */
+#define listGET_LIST_ITEM_VALUE( pxListItem )	( ( pxListItem )->xItemValue )
+
+/*
+ * Access macro to retrieve the value of the list item at the head of a given
+ * list.
+ *
+ * \page listGET_LIST_ITEM_VALUE listGET_LIST_ITEM_VALUE
+ * \ingroup LinkedList
+ 获取 表头节点的值
+ */
+#define listGET_ITEM_VALUE_OF_HEAD_ENTRY( pxList )	( ( ( pxList )->xListEnd ).pxNext->xItemValue )
+
+//获取 表头
+#define listGET_HEAD_ENTRY( pxList )	( ( ( pxList )->xListEnd ).pxNext )
+
+/*
+ * Return the list item at the head of the list.
+ *
+ * \page listGET_NEXT listGET_NEXT
+ * \ingroup LinkedList
+ 获取 当前节点的下一个节点
+ */
+#define listGET_NEXT( pxListItem )	( ( pxListItem )->pxNext )
+
+/*
+ * Return the list item that marks the end of the list
+ *
+ * \page listGET_END_MARKER listGET_END_MARKER
+ * \ingroup LinkedList
+ 获取链表的最后一个节点
+ */
+#define listGET_END_MARKER( pxList )	( ( ListItem_t const * ) ( &( ( pxList )->xListEnd ) ) )
+
+//判断链表是否为空
+#define listLIST_IS_EMPTY( pxList )	( ( BaseType_t ) ( ( pxList )->uxNumberOfItems == ( UBaseType_t ) 0 ) )
+
+//获取链表的长度 / 节点数
+#define listCURRENT_LIST_LENGTH( pxList )	( ( pxList )->uxNumberOfItems )
+
+//获取链表第一个节点的 OWNER,明确是TCB
+#define listGET_OWNER_OF_NEXT_ENTRY( pxTCB, pxList )										\
+{																							\
+List_t * const pxConstList = ( pxList );													\
+	/* Increment the index to the next item and return the item, ensuring */				\
+	/* we don't return the marker used at the end of the list.  */							\
+	( pxConstList )->pxIndex = ( pxConstList )->pxIndex->pxNext;							\
+	if( ( void * ) ( pxConstList )->pxIndex == ( void * ) &( ( pxConstList )->xListEnd ) )	\
+	{																						\
+		( pxConstList )->pxIndex = ( pxConstList )->pxIndex->pxNext;						\
+	}																						\
+	( pxTCB ) = ( pxConstList )->pxIndex->pvOwner;											\
+}
+
+//获取链表第一个节点的 OWNER 
+#define listGET_OWNER_OF_HEAD_ENTRY( pxList )  ( (&( ( pxList )->xListEnd ))->pxNext->pvOwner )
+
+
+
+/*
+ * Must be called before a list is used!  This initialises all the members
+ * of the list structure and inserts the xListEnd item into the list as a
+ * marker to the back of the list.
+ *
+ * @param pxList Pointer to the list being initialised.
+ *
+ * \page vListInitialise vListInitialise
+ * \ingroup LinkedList
+ */
+ //链表根节点初始化
+void vListInitialise( List_t * const pxList ) ;
+
+
+//节点初始化
+void vListInitialiseItem( ListItem_t * const pxItem ) PRIVILEGED_FUNCTION;
+
+//插入一个节点
+void vListInsert( List_t * const pxList, ListItem_t * const pxNewListItem ) PRIVILEGED_FUNCTION;
+
+//插入一个节点到尾部
+void vListInsertEnd( List_t * const pxList, ListItem_t * const pxNewListItem ) PRIVILEGED_FUNCTION;
+
+//移除一个节点
+UBaseType_t uxListRemove( ListItem_t * const pxItemToRemove ) PRIVILEGED_FUNCTION;
+
+
+vListInsert
+3
+5
+2
+
+2 3 5
+
+
+vListInsertEnd
+3
+5
+2
+3 5 2
